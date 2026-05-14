@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStudy Buddy - Premium Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --secondary: #4f46e5; --bg: #f8fafc; --text: #1e293b; --accent: #f43f5e; --success: #10b981; --premium: #8b5cf6; --fb: #1877f2; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif; scroll-behavior: smooth; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+        /* Navigation */
+        nav { background: white; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .logo { font-size: 1.5rem; font-weight: 600; color: var(--primary); cursor: pointer; }
+        .nav-links { display: flex; align-items: center; gap: 15px; }
+        .nav-links a { text-decoration: none; color: var(--text); font-size: 0.9rem; font-weight: 600; }
+        
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+        .badge-free { background: #e2e8f0; color: #475569; }
+        .badge-premium { background: var(--premium); color: white; display: none; }
+
+        /* Overlays */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .card-modal { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 450px; text-align: center; border: 1px solid #e2e8f0; position: relative; }
+        
+        #main-content { display: none; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1); margin-bottom: 30px; border: 1px solid #eef2ff; }
+        
+        /* Pricing Table */
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .price-card { background: white; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; text-align: center; position: relative; }
+        .price { font-size: 1.8rem; font-weight: 600; color: var(--primary); margin: 10px 0; }
+
+        /* Buttons */
+        .btn-action { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: 600; transition: 0.3s; margin-top: 10px; }
+        .btn-action:hover { transform: scale(1.02); }
+        .btn-fb { background: var(--fb); margin-top: 15px; }
+        
+        /* AI Elements */
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 1rem; margin-top: 5px; }
+        .ai-chat-box { height: 350px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 15px; padding: 20px; margin-bottom: 10px; text-align: left; }
+        .bubble { padding: 10px 15px; border-radius: 15px; margin-bottom: 10px; max-width: 85%; line-height: 1.5; font-size: 0.95rem; }
+        .user-bubble { background: var(--primary); color: white; align-self: flex-end; margin-left: auto; }
+        .ai-bubble { background: #eef2ff; color: var(--text); border: 1px solid #dbeafe; }
+
+        .premium-locked { filter: blur(4px); pointer-events: none; opacity: 0.6; }
+        .premium-content-area { position: relative; overflow: hidden; border-radius: 15px; }
+        .lock-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5; background: rgba(255,255,255,0.4); }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Authentication Overlay -->
+    <div id="auth-overlay" class="overlay" style="display: flex;">
+        <div class="card-modal">
+            <h2 style="color:var(--primary); margin-bottom: 10px;">SmartStudy Buddy</h2>
+            <p style="color:#64748b;">เข้าสู่ระบบเพื่อเริ่มเรียนรู้</p>
+            <input type="text" id="reg-name" style="margin-top:20px;" placeholder="ชื่อ-นามสกุล">
+            <button class="btn-action" onclick="handleAuth('name')">สร้างบัญชีผู้ใช้</button>
+            <div style="margin: 20px 0; color: #94a3b8; font-size: 0.8rem;">หรือ</div>
+            <button class="btn-action btn-fb" onclick="handleAuth('Facebook User')">เข้าใช้งานด้วย Facebook</button>
+        </div>
+    </div>
+
+    <!-- 2. Payment Modal -->
+    <div id="payment-overlay" class="overlay">
+        <div class="card-modal">
+            <h3 style="color:var(--premium)">💎 อัปเกรดเป็นพรีเมี่ยม</h3>
+            <div style="background: #f1f5f9; padding: 20px; border-radius: 15px; margin: 20px 0; text-align: left; font-size: 0.9rem;">
+                <p><b>ธนาคาร:</b> SmartStudy Buddy Bank</p>
+                <p><b>เลขบัญชี:</b> 099-8-77654-3</p>
+                <p><b>ชื่อบัญชี:</b> บจก. สมาร์ทสตัดดี้ (ไทยแลนด์)</p>
+                <p><b>ยอดชำระ:</b> <span style="color:var(--accent); font-weight: bold; font-size: 1.2rem;">79.00</span> บาท</p>
+            </div>
+            <p style="font-size: 0.8rem; margin-bottom: 10px; color: var(--accent);">* แนบสลิปเพื่อปลดล็อกฟีเจอร์ทันที</p>
+            <input type="file" id="slip-upload" accept="image/*" style="margin-bottom: 20px;">
+            <button class="btn-action" style="background: var(--success);" onclick="processPayment()">ยืนยันการชำระเงิน</button>
+            <button onclick="document.getElementById('payment-overlay').style.display='none'" style="background:none; border:none; color:#64748b; margin-top:15px; cursor:pointer;">ยกเลิก</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <nav>
+            <div class="logo" onclick="location.reload()">SmartStudy Buddy 🎓</div>
+            <div class="nav-links">
+                <span id="display-name" style="font-weight: 600; color: var(--primary);"></span>
+                <a href="#ai-tutor">AI ถาม-ตอบ</a>
+                <a href="#study-planner">ตารางเรียน</a>
+                <a href="#premium-exams">คลังข้อสอบ</a>
+                <span id="free-badge" class="badge badge-free">Free Plan</span>
+                <span id="prem-badge" class="badge badge-premium">Premium ✨</span>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- AI Tutor Section -->
+            <section id="ai-tutor" class="card">
+                <h2>🤖 AI Tutor อัจฉริยะ (Gemini Powered)</h2>
+                <p style="color:#64748b; margin-bottom: 15px;">ถาม-ตอบ และแก้โจทย์ปัญหาแบบ Step-by-Step</p>
+                <div class="ai-chat-box" id="chat-output">
+                    <div class="bubble ai-bubble">สวัสดีครับ! ผมคือ AI Tutor ยินดีที่ได้รู้จักครับ ผมสามารถช่วยสอนฟิสิกส์ แปลภาษา เขียนโปรแกรม หรือแก้โจทย์คณิตศาสตร์ให้คุณได้ ลองถามมาได้เลย!</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ai-question" placeholder="พิมพ์คำถามที่นี่ เช่น 'อธิบายเรื่อง Array ในภาษา C' หรือ 'การเขียน HTML เบื้องต้น'">
+                    <button class="btn-action" style="width: 100px; margin-top:5px;" onclick="askAI()">ถาม</button>
+                </div>
+            </section>
+
+            <!-- Study Planner Section (New!) -->
+            <section id="study-planner" class="card">
+                <h2>📅 ตารางเรียนส่วนตัว</h2>
+                <p style="color:#64748b; margin-bottom: 15px;">วางแผนการเรียนและการส่งงานให้มีประสิทธิภาพ</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="subject-input" placeholder="วิชา/งานที่ต้องทำ (เช่น Lab 4 ภาษา C)">
+                    <input type="date" id="date-input">
+                    <button class="btn-action" style="margin-top:5px; width: 80px;" onclick="addSchedule()">เพิ่ม</button>
+                </div>
+                <ul id="schedule-list" style="list-style: none; padding: 0;">
+                    <!-- รายการวิชาจะมาโผล่ที่นี่ -->
+                </ul>
+            </section>
+
+            <!-- Premium Exams Section -->
+            <section id="premium-exams" class="card">
+                <h2>📚 คลังข้อสอบและแบบฝึกหัดพรีเมี่ยม</h2>
+                <div class="premium-content-area">
+                    <!-- Lock Message for Free Users -->
+                    <div id="lock-msg" class="lock-overlay">
+                        <span style="font-size: 3rem;">🔒</span>
+                        <h3 style="margin:10px 0;">เฉพาะสมาชิกพรีเมี่ยม</h3>
+                        <button class="btn-action" style="width: auto; padding: 10px 30px;" onclick="document.getElementById('payment-overlay').style.display='flex'">อัปเกรดเพื่อดูข้อสอบ</button>
+                    </div>
+
+                    <div id="exam-list" class="premium-locked">
+                        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+                            <h4>[Physics] แบบฝึกหัดเรื่องแรงและมวล</h4>
+                            <p style="font-size: 0.85rem; color:#64748b;">โจทย์ 20 ข้อ พร้อมเฉลยละเอียดและวิดีโออธิบาย</p>
+                            <button class="btn-action" style="width:auto; padding:5px 15px; font-size: 0.8rem;">เริ่มทำแบบฝึกหัด</button>
+                        </div>
+                        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+                            <h4>[Math] ข้อสอบเก่าแคลคูลัส 1 (มิดเทอม)</h4>
+                            <p style="font-size: 0.85rem; color:#64748b;">รวมข้อสอบย้อนหลัง 5 ปี พร้อมเทคนิคการทำโจทย์เร็ว</p>
+                            <button class="btn-action" style="width:auto; padding:5px 15px; font-size: 0.8rem;">ดาวน์โหลด PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pricing Table -->
+            <section id="pricing-section" class="card">
+                <h2 style="text-align: center; margin-bottom: 20px;">เลือกแผนการเรียนของคุณ</h2>
+                <div class="pricing-grid">
+                    <div class="price-card">
+                        <h4>Free Plan</h4>
+                        <div class="price">0 <span>บาท</span></div>
+                        <p style="font-size: 0.8rem; color:#64748b;">AI Tutor พื้นฐาน<br>จัดตารางเรียนได้</p>
+                    </div>
+                    <div class="price-card" style="border: 2px solid var(--primary);">
+                        <div style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:2px 12px; border-radius:10px; font-size:0.7rem;">ยอดนิยม</div>
+                        <h4>Premium Member</h4>
+                        <div class="price">79 <span>บาท</span></div>
+                        <p style="font-size: 0.8rem; color:#64748b;">คลังข้อสอบเก่า + เฉลย<br>AI วิเคราะห์จุดอ่อน</p>
+                        <button class="btn-action" onclick="document.getElementById('payment-overlay').style.display='flex'">อัปเกรดเลย</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // -----------------------------------------
+        // 1. ระบบ Authentication เบื้องต้น
+        // -----------------------------------------
+        function handleAuth(name) {
+            const user = (name === 'name') ? document.getElementById('reg-name').value : name;
+            if(!user) { alert("กรุณากรอกชื่อ"); return; }
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            
+            // แสดงชื่อผู้ใช้บนแถบเมนู
+            const displayEl = document.getElementById('display-name');
+            if(displayEl) displayEl.innerText = `👋 สวัสดีครับ, ${user}`;
+        }
+
+        // -----------------------------------------
+        // 2. ระบบ Gemini AI
+        // -----------------------------------------
+        // --- ระบบ AI จำลอง (ทำงานได้ทันที 100%) ---
+async function callGemini(prompt) {
+    // หน่วงเวลาจำลองการคิด 1 วินาที
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const q = prompt.toLowerCase();
+    
+    if (q.includes("สวัสดี")) {
+        return "สวัสดีครับคุณสัณห์ฤทัย! ผม AI Tutor จากโปรเจกต์ SmartStudy Buddy ยินดีที่ได้ช่วยเรื่องการเรียนครับ วันนี้อยากให้ช่วยติววิชาไหนดีครับ?";
+    } else if (q.includes("ภาษา c") || q.includes("array")) {
+        return "ในภาษา C **Array** คือการเก็บข้อมูลชนิดเดียวกันหลายๆ ตัวไว้ต่อเนื่องกันในหน่วยความจำครับ เช่น `int score[10];` จะเก็บคะแนนได้ 10 ตัวครับ";
+    } else if (q.includes("ฟิสิกส์")) {
+        return "วิชาฟิสิกส์น่าสนใจมากครับ! ผมสามารถช่วยคำนวณเรื่อง แรง (F=ma), การเคลื่อนที่ หรือกฎของนิวตันได้นะครับ ลองส่งโจทย์มาได้เลย";
+    } else if (q.includes("เทรด") || q.includes("forex") || q.includes("xauusd")) {
+        return "สำหรับการวิเคราะห์ XAUUSD (ทองคำ) อย่าลืมดูอินดิเคเตอร์ EMA 200 และ Supertrend ประกอบการตัดสินใจด้วยนะครับ!";
+    } else {
+        return "เป็นคำถามที่น่าสนใจครับ! ข้อมูลในส่วนนี้กำลังถูกประมวลผลผ่านระบบ SmartStudy Buddy เพื่อหาคำตอบที่ดีที่สุดให้คุณครับ";
+    }
+}
+
+        async function askAI() {
+            const q = document.getElementById('ai-question').value.trim();
+            const output = document.getElementById('chat-output');
+            if(!q) return;
+
+            // พิมพ์ข้อความฝั่งผู้ใช้
+            output.innerHTML += `<div class="bubble user-bubble">${q}</div>`;
+            document.getElementById('ai-question').value = "";
+            
+            // แสดงสถานะ AI กำลังพิมพ์
+            const loadingId = "loading-" + Date.now();
+            output.innerHTML += `<div id="${loadingId}" class="bubble ai-bubble"><b>AI Tutor:</b> กำลังคิด... 🤔</div>`;
+            output.scrollTop = output.scrollHeight;
+
+            // เรียกใช้งาน Gemini
+            const answer = await callGemini(q);
+            
+            // ลบสถานะกำลังพิมพ์และแทนที่ด้วยคำตอบจริง
+            document.getElementById(loadingId).remove();
+            
+            // แปลง \n เป็น <br> เพื่อให้ขึ้นบรรทัดใหม่ใน HTML ได้ถูกต้อง
+            // และรองรับการทำตัวหนา (Markdown **) เบื้องต้น
+            let formattedAnswer = answer.replace(/\n/g, '<br>');
+            formattedAnswer = formattedAnswer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+            output.innerHTML += `<div class="bubble ai-bubble"><b>AI Tutor:</b><br>${formattedAnswer}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // -----------------------------------------
+        // 3. ระบบตารางเรียน (Study Planner)
+        // -----------------------------------------
+        function addSchedule() {
+            const subject = document.getElementById('subject-input').value;
+            const date = document.getElementById('date-input').value;
+            if(!subject || !date) {
+                alert("กรุณากรอกวิชา/งาน และวันที่ให้ครบถ้วนครับ");
+                return;
+            }
+
+            const list = document.getElementById('schedule-list');
+            const item = document.createElement('li');
+            item.className = 'bubble ai-bubble';
+            item.style.marginBottom = '10px';
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.style.alignItems = 'center';
+            item.innerHTML = `
+                <span>📚 <b>${subject}</b> - วันที่กำหนด: <span style="color:var(--accent); font-weight:bold;">${date}</span></span>
+                <button onclick="this.parentElement.remove()" style="background:#f43f5e; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">ลบ</button>
+            `;
+            list.appendChild(item);
+            
+            // เคลียร์ค่าในช่อง Input
+            document.getElementById('subject-input').value = "";
+            document.getElementById('date-input').value = "";
+        }
+
+        // -----------------------------------------
+        // 4. ระบบจำลองการชำระเงินและปลดล็อกพรีเมี่ยม
+        // -----------------------------------------
+        function processPayment() {
+            const slip = document.getElementById('slip-upload').files[0];
+            if(!slip) { alert("กรุณาแนบไฟล์สลิปเพื่อยืนยันครับ"); return; }
+
+            const btn = document.querySelector('#payment-overlay .btn-action');
+            btn.innerText = "กำลังตรวจสอบสลิป...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                alert("ชำระเงินสำเร็จ! ระบบปลดล็อกฟีเจอร์พรีเมี่ยมให้คุณเรียบร้อยแล้ว ✨");
+                document.getElementById('payment-overlay').style.display = 'none';
+                unlockPremium();
+            }, 2000);
+        }
+
+        function unlockPremium() {
+            document.getElementById('free-badge').style.display = 'none';
+            document.getElementById('prem-badge').style.display = 'inline-block';
+            document.getElementById('lock-msg').style.display = 'none';
+            document.getElementById('exam-list').classList.remove('premium-locked');
+            document.getElementById('pricing-section').style.display = 'none';
+            
+            // แจ้งเตือนผู้ใช้เล็กน้อย
+            const output = document.getElementById('chat-output');
+            output.innerHTML += `<div class="bubble ai-bubble" style="border: 1px solid var(--premium);"><b>✨ System:</b> ยินดีต้อนรับสู่ Premium! คุณสามารถเข้าถึงคลังข้อสอบและให้ AI ช่วยวิเคราะห์ข้อสอบได้แล้วครับ</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+    </script>
+</body>
+</html>
